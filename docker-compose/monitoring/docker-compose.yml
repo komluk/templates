@@ -11,33 +11,39 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - 9090:9090
     volumes:
       - /etc/prometheus:/etc/prometheus
       - prometheus-data:/prometheus
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-    depends_on:
-    - cadvisor
+      - '--config.file=/etc/prometheus/prometheus.yml'
     restart: unless-stopped
 
   grafana:
     image: grafana/grafana-oss:latest
     container_name: grafana
     ports:
-      - "3000:3000"
+      - 3000:3000
     volumes:
       - grafana-data:/var/lib/grafana
     restart: unless-stopped
 
-  node_exporter:
+  nodeexporter:
     image: quay.io/prometheus/node-exporter:latest
-    container_name: node_exporter
+    container_name: nodeexporter
     command:
-      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100
+    network_mode: host
     pid: host
     volumes:
-      - '/:/host:ro,rslave'
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
     restart: unless-stopped
 
   cadvisor:
@@ -48,13 +54,12 @@ services:
     - /var/run:/var/run:rw
     - /sys:/sys:ro
     - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
     depends_on:
     - redis
-    restart: unless-stopped
 
   redis:
     image: redis:latest
     container_name: redis
     ports:
-    - 6379:6379
-    restart: unless-stopped
+      - 6379:6379

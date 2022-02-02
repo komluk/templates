@@ -1,5 +1,9 @@
 version: '3'
 
+networks:
+  monitoring:
+    driver: bridge
+
 volumes:
   prometheus-data:
     driver: local
@@ -17,7 +21,13 @@ services:
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
     restart: unless-stopped
+    networks:
+      - monitoring
 
   grafana:
     image: grafana/grafana-oss:latest
@@ -27,9 +37,11 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     restart: unless-stopped
+    networks:
+      - monitoring
 
   nodeexporter:
-    image: quay.io/prometheus/node-exporter:latest
+    image: prom/node-exporter:latest
     container_name: nodeexporter
     command:
       - '--path.procfs=/host/proc'
@@ -38,13 +50,13 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - 9100:9100
-    network_mode: host
-    pid: host
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     restart: unless-stopped
+    networks:
+      - monitoring
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -57,9 +69,12 @@ services:
     restart: unless-stopped
     depends_on:
     - redis
+    networks:
+      - monitoring
 
   redis:
     image: redis:latest
     container_name: redis
     ports:
       - 6379:6379
+    restart: unless-stopped

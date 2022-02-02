@@ -9,3 +9,4 @@ services:
     volumes:
       - influxdb-data:/var/lib/influxdb2
       - /etc/influxdb2:/etc/influxdb2
+    restart: unless-stopped

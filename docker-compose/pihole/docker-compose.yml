@@ -14,6 +14,6 @@ services:
       TZ: 'Europe/Warsaw'
       WEBPASSWORD: 'your-secret-password'
     volumes:
-      - etcd:/etc/pihole
-      - dnsmasq:/etc/dnsmasq.d
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
     restart: unless-stopped
